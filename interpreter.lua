@@ -2,9 +2,12 @@ local interpreter = {}
 
 function interpreter.new(program)
 	local self = {}
-	self.stack = {}
-	self.instructions = program.instructions
-	self.labels = program.labels
+	self.stack = setmetatable({}, {
+		__index = function(t, k) return k == "top" and t[#t] end,
+		__newindex = function(t, k, v) rawset(t, k == "top" and #t or k, v) end,
+	})
+	self.instructions = program
+	self.labels = {}
 	self.pc = 1
 	self.active = true
 	
@@ -17,6 +20,12 @@ end
 
 function interpreter:pop()
 	return table.remove(self.stack)
+end
+
+function interpreter:jump(label)
+	if not self.labels[label] then error "no such label" end
+	if not self.instructions[self.labels[label]] then error "label out of bounds" end
+	self.pc = self.labels[label]
 end
 
 -- Put this X pancake on top!
@@ -65,32 +74,36 @@ end
 -- Flip the pancakes on top!
 -- Pop off the top two values, swap them, and push them back.
 function interpreter:flipThePancakesOnTop()
-	local a, b = self:pop(), self:pop()
-	self:push(a)
-	self:push(b)
+	self.stack.top, self.stack[#self.stack-1] = self.stack[#self.stack-1], self.stack.top
 end
 
 -- Put another pancake on top!
 -- Pop off the top value and push it twice.
 function interpreter:putAnotherPancakeOnTop()
-	self:push(self.stack[#self.stack])
+	self:push(self.stack.top)
+end
+
+-- [label]
+-- Defines a label to go back to (Can also define a comment, if needed).
+-- When you go back to the label, it goes to the line number (1 indexed)
+-- of the top value of the stack when the label was defined.
+function interpreter:label(label)
+	self.labels[label] = self.stack.top
 end
 
 -- If the pancake isn't tasty, go over to "label".
 -- Go to label [label] if the top value is 0.
 function interpreter:ifThePancakeIsntTastyGoOverTo(label)
-	if self.stack[#self.stack] == 0 then
-		if not self.labels[label] then error "no such label" end
-		self.pc = self.labels[label]
+	if self.stack.top == 0 then
+		self:jump(label)
 	end
 end
 
 -- If the pancake is tasty, go over to "label".
 -- Same as above, except go if the top value is not 0.
 function interpreter:ifThePancakeIsTastyGoOverTo(label)
-	if self.stack[#self.stack] ~= 0 then
-		if not self.labels[label] then error "no such label" end
-		self.pc = self.labels[label]
+	if self.stack.top ~= 0 then
+		self:jump(label)
 	end
 end
 
@@ -105,7 +118,7 @@ end
 -- Put butter on the pancakes!
 -- Increment only the top stack value.
 function interpreter:putButterOnThePancakes()
-	self.stack[#self.stack] = self.stack[#self.stack] + 1
+	self.stack.top = self.stack.top + 1
 end
 
 -- Take off the syrup!
@@ -119,7 +132,7 @@ end
 -- Take off the butter!
 -- Decrement only the top stack value.
 function interpreter:takeOffTheButter()
-	self.stack[#self.stack] = self.stack[#self.stack] - 1
+	self.stack.top = self.stack.top - 1
 end
 
 -- Eat all of the pancakes!
