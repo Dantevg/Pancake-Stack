@@ -2,6 +2,9 @@ local interpreter = require "pancakestack.interpreter"
 
 local parser = {}
 
+-- Ignore anything between brackets at the end of a line
+parser.comment = "(%(.+%))$"
+
 -- Maps statements (syntax) to functions, matching their arguments
 -- The keys are used as patterns for string.match,
 -- so non-pattern characters need to be escaped.
@@ -37,9 +40,12 @@ end
 function parser.parse(input)
 	local program = {}
 	for line in input:gmatch("([^\n]+)") do
-		local statement = parser.parseLine(line)
-		if not statement then error("No such statement: "..line) end
-		table.insert(program, statement)
+		line = line:gsub(parser.comment, "") -- Remove comments
+		if #line > 0 then
+			local statement = parser.parseLine(line)
+			if not statement then error("Unknown statement: "..line) end
+			table.insert(program, statement)
+		end
 	end
 	return program
 end
