@@ -40,13 +40,14 @@ end
 -- Give me a pancake!
 -- Input a number value and push it on the stack.
 function interpreter:giveMeAPancake()
-	error "giveMeAPancake: not implemented"
+	self:push(io.read('n') or 0)
 end
 
 -- How about a hotcake?
 -- Input an ASCII character and push its value on the stack.
 function interpreter:howAboutAHotcake()
-	error "howAboutAHotcake: not implemented"
+	local char = io.read(1)
+	self:push(char and string.byte(char) or 0)
 end
 
 -- Show me a pancake!
@@ -75,24 +76,22 @@ function interpreter:putAnotherPancakeOnTop()
 	self:push(self.stack[#self.stack])
 end
 
--- [label]
--- Defines a label to go back to (Can also define a comment, if needed).
--- When you go back to the label, it goes to the line number (1 indexed)
--- of the top value of the stack when the label was defined.
-function interpreter:label()
-	error "label: not implemented"
-end
-
 -- If the pancake isn't tasty, go over to "label".
 -- Go to label [label] if the top value is 0.
-function interpreter:ifThePancakeIsntTastyGoOverTo()
-	error "ifThePancakeIsntTastyGoOverTo: not implemented"
+function interpreter:ifThePancakeIsntTastyGoOverTo(label)
+	if self.stack[#self.stack] == 0 then
+		if not self.labels[label] then error "no such label" end
+		self.pc = self.labels[label]
+	end
 end
 
 -- If the pancake is tasty, go over to "label".
 -- Same as above, except go if the top value is not 0.
-function interpreter:ifThePancakeIsTastyGoOverTo()
-	error "ifThePancakeIsTastyGoOverTo: not implemented"
+function interpreter:ifThePancakeIsTastyGoOverTo(label)
+	if self.stack[#self.stack] ~= 0 then
+		if not self.labels[label] then error "no such label" end
+		self.pc = self.labels[label]
+	end
 end
 
 -- Put syrup on the pancakes!

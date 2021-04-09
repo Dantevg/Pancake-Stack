@@ -2,6 +2,11 @@ local interpreter = require "pancakestack.interpreter"
 
 local parser = {}
 
+-- [label]
+-- Defines a label to go back to (Can also define a comment, if needed).
+-- When you go back to the label, it goes to the line number (1 indexed)
+-- of the top value of the stack when the label was defined.
+-- only used as identifier here
 local function label() end
 
 -- Maps statements (syntax) to functions, matching their arguments
@@ -43,6 +48,7 @@ function parser.parse(input)
 	}
 	for line in input:gmatch("([^\n]+)") do
 		local statement = parser.parseLine(line)
+		if not statement then error("No such statement: "..line) end
 		if statement.fn == label then
 			program.labels[statement.args[1]] = #program.instructions + 1
 		else
