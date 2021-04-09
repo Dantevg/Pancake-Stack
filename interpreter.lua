@@ -1,11 +1,14 @@
+-- Make top refer to top element of stack, for __index and __newindex
+local Stack = {}
+function Stack.__index(t, k) return k == "top" and t[#t] end
+function Stack.__newindex(t, k, v) rawset(t, k == "top" and #t or k, v) end
+setmetatable(Stack, {__call = function() return setmetatable({}, Stack) end})
+
 local interpreter = {}
 
 function interpreter.new(program)
 	local self = {}
-	self.stack = setmetatable({}, {
-		__index = function(t, k) return k == "top" and t[#t] end,
-		__newindex = function(t, k, v) rawset(t, k == "top" and #t or k, v) end,
-	})
+	self.stack = Stack()
 	self.instructions = program
 	self.labels = {}
 	self.pc = 1
@@ -141,6 +144,8 @@ function interpreter:eatAllOfThePancakes()
 	self.active = false
 end
 
+-- Perform one instruction
+-- Returns whether it successfully executed
 function interpreter:step()
 	if not self.active then return false end
 	
